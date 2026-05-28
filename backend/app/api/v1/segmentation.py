@@ -1,10 +1,10 @@
-"""Endpoints de Segmentación K-Means — implementados en Sección 7."""
+"""Endpoints de Segmentación K-Means"""
 
 from fastapi import APIRouter
 
 router = APIRouter()
 
-# TODO Sección 7: implementar endpoints
+# TODO implementar endpoints
 # GET /clusters
 # GET /customers/{id}/cluster
 # GET /scatter

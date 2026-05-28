@@ -1,11 +1,5 @@
 """
-Entrenamiento de segmentación K-Means — Sección 7.
-===================================================
-1. Carga transactions_long desde Parquet.
-2. Construye features por cliente.
-3. Determina K óptimo (método del codo, k=2..8).
-4. Entrena KMeans (Spark MLlib) y guarda modelo en data/models/kmeans/.
-5. Persiste customer_clusters.parquet con cluster asignado.
+Entrenamiento de segmentación K-Means
 """
 
 from pathlib import Path

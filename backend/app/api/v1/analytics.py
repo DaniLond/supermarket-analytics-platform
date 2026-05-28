@@ -1,10 +1,10 @@
-"""Endpoints de Visualizaciones Analíticas — implementados en Sección 5."""
+"""Endpoints de Visualizaciones Analíticas"""
 
 from fastapi import APIRouter
 
 router = APIRouter()
 
-# TODO Sección 5: implementar endpoints
+# TODO implementar endpoints
 # GET /time-series
 # GET /boxplot
 # GET /correlation-heatmap

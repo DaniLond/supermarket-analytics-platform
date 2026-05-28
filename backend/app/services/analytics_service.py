@@ -1,4 +1,4 @@
-"""Servicio de visualizaciones analíticas. Implementado en Sección 5."""
+"""Servicio de visualizaciones analíticas."""
 
 from datetime import date
 

@@ -1,4 +1,4 @@
-"""Servicio de segmentación K-Means. Implementado en Sección 7."""
+"""Servicio de segmentación K-Means."""
 
 import logging
 import subprocess

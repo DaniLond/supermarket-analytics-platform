@@ -6,7 +6,6 @@ const api = axios.create({
   timeout: 30_000,
 })
 
-// Convierte los filtros opcionales en query params
 function filtersToParams(filters?: Filters) {
   const params: Record<string, string | number> = {}
   if (filters?.startDate) params['start_date'] = filters.startDate

@@ -1,9 +1,5 @@
 """
-Entrenamiento de reglas de asociación FP-Growth — Sección 8.
-=============================================================
-1. Carga transactions_basket desde Parquet (categorías como arrays).
-2. Aplica FP-Growth (pyspark.ml.fpm.FPGrowth).
-3. Persiste association_rules.parquet con antecedent, consequent, confidence, lift, support.
+Entrenamiento de reglas de asociación FP-Growth
 """
 
 from pathlib import Path
@@ -35,7 +31,6 @@ def main():
     print("Cargando canastas...")
     basket = spark.read.parquet(str(BASKET_PATH))
 
-    # FPGrowth espera una columna de tipo Array<T>
     basket = basket.withColumn("categories", F.col("categories").cast("array<int>"))
 
     print(f"Entrenando FP-Growth (minSupport={MIN_SUPPORT}, minConfidence={MIN_CONFIDENCE})...")

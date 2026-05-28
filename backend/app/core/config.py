@@ -10,12 +10,20 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
-    # Paths (relative to project root; override via env vars for Docker)
+    # Paths
     data_root: Path = Path("data")
+
+    project_root_override: Path | None = None
+
+    def _resolve_data_root(self) -> Path:
+        """Resuelve data_root contra project_root si es relativa (desarrollo local)."""
+        if self.data_root.is_absolute():
+            return self.data_root
+        return self.project_root / self.data_root
 
     @property
     def processed_root(self) -> Path:
-        return self.data_root / "processed"
+        return self._resolve_data_root() / "processed"
 
     @property
     def transactions_long_path(self) -> Path:
@@ -31,7 +39,7 @@ class Settings(BaseSettings):
 
     @property
     def models_root(self) -> Path:
-        return self.data_root / "models"
+        return self._resolve_data_root() / "models"
 
     @property
     def kmeans_model_path(self) -> Path:
@@ -45,10 +53,18 @@ class Settings(BaseSettings):
     def customer_clusters_path(self) -> Path:
         return self.processed_root / "customer_clusters.parquet"
 
-    # Raw dataset (already extracted)
     @property
     def raw_dataset_path(self) -> Path:
-        return self.data_root / "DataSet"
+        return self._resolve_data_root() / "DataSet"
 
+    @property
+    def project_root(self) -> Path:
+        if self.project_root_override is not None:
+            return self.project_root_override
+        return Path(__file__).resolve().parent.parent.parent.parent
+
+    @property
+    def hadoop_home(self) -> Path:
+        return Path("C:/hadoop")
 
 settings = Settings()

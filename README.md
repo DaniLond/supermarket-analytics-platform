@@ -46,8 +46,8 @@ docker compose up --build
 
 ```bash
 cd backend
-pip install -e ".[dev]"
-uvicorn app.main:app --reload --port 8000
+py -m pip install -e ".[dev]"
+py -m uvicorn app.main:app --reload --port 8000
 ```
 
 > **Nota:** si los Parquet no existen aún, el health check reportará
@@ -66,11 +66,14 @@ npm run dev
 
 ## Cómo cargar el dataset inicial
 
-El dataset ya está extraído en `data/DataSet/`. Ejecuta el job de Spark:
+El dataset ya está extraído en `data/DataSet/`. Con el backend corriendo, dispara la ingesta:
 
-```bash
-# Desde la raíz del proyecto
-python spark_jobs/ingest_initial_dataset.py
+```powershell
+# PowerShell (con el backend corriendo en puerto 8000)
+Invoke-RestMethod -Method POST -Uri "http://localhost:8000/api/v1/ingest"
+
+# Verificar estado del job
+Invoke-RestMethod -Uri "http://localhost:8000/api/v1/ingest/status"
 ```
 
 Esto genera:
@@ -128,20 +131,3 @@ Proyecto/
 └── docker-compose.yml
 ```
 
----
-
-## Tests
-
-```bash
-cd backend
-pytest --cov=app tests/
-```
-
----
-
-## Linting
-
-```bash
-cd backend
-ruff check app/ && black --check app/
-```

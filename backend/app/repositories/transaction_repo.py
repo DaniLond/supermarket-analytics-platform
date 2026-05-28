@@ -1,6 +1,5 @@
 """
-Repositorio de transacciones — consultas DuckDB sobre Parquet particionado.
-Todas las queries son parametrizadas para evitar SQL injection.
+Repositorio de transacciones
 """
 
 import logging
@@ -22,7 +21,6 @@ class TransactionRepository:
         end_date: date | None,
         store_id: int | None,
     ) -> tuple[str, list]:
-        """Construye cláusula WHERE y lista de parámetros para filtros comunes."""
         clauses: list[str] = []
         params: list = []
         if start_date:
@@ -124,8 +122,8 @@ class TransactionRepository:
         where, params = self._date_filter(start_date, end_date, store_id)
         return self._db.execute(
             f"""
-            SELECT DAYOFWEEK(date)  AS day_of_week,
-                   DAY(date)        AS day_of_month,
+            SELECT DAYOFWEEK(date::DATE)  AS day_of_week,
+                   DAY(date::DATE)        AS day_of_month,
                    COUNT(DISTINCT transaction_id) AS transaction_count
             FROM transactions_long {where}
             GROUP BY day_of_week, day_of_month
@@ -179,7 +177,6 @@ class TransactionRepository:
         ).df()
 
     def insert_transactions(self, rows: list[dict]) -> int:
-        """Inserta nuevas transacciones (long format) en DuckDB para consultas inmediatas."""
         import pandas as pd
 
         df = pd.DataFrame(rows)

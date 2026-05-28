@@ -1,4 +1,4 @@
-"""Servicio de recomendaciones FP-Growth. Implementado en Sección 8."""
+"""Servicio de recomendaciones FP-Growth."""
 
 import logging
 import subprocess

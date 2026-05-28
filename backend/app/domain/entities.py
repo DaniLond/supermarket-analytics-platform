@@ -1,6 +1,5 @@
 """
-Entidades de dominio — representaciones puras, sin dependencias de framework.
-Usadas como tipos intermedios entre repositorios y servicios.
+Entidades de dominio
 """
 
 from dataclasses import dataclass, field
@@ -19,7 +18,6 @@ class Transaction:
 
 @dataclass
 class TransactionLine:
-    """Versión 'long' de una transacción: una fila por categoría."""
     transaction_id: str
     date: date
     store_id: int

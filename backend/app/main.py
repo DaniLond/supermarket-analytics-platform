@@ -1,13 +1,5 @@
 """
 Supermercado Analytics API
-==========================
-Backend principal de la plataforma de analítica de transacciones de supermercado.
-
-Arquitectura:
-    Ingesta (Spark) → Parquet particionado → DuckDB (API) → FastAPI → React
-
-Patrón heredado del Lab 10: lifespan, Pydantic v2 con Field+examples, ErrorResponse,
-logging estructurado, CORS abierto para desarrollo.
 """
 
 import logging
@@ -20,21 +12,10 @@ from pydantic import BaseModel
 
 from app.core.config import settings
 from app.core.logging import setup_logging
+from app.db import state
 
 setup_logging()
 logger = logging.getLogger("supermercado.api")
-
-
-# ---------------------------------------------------------------------------
-# Estado global compartido (inyectado desde lifespan)
-# ---------------------------------------------------------------------------
-class AppState:
-    db: duckdb.DuckDBPyConnection | None = None
-    transactions_loaded: bool = False
-    models_loaded: bool = False
-
-
-state = AppState()
 
 
 # ---------------------------------------------------------------------------
@@ -54,11 +35,11 @@ async def lifespan(app: FastAPI):
     if long_path.exists():
         state.db.execute(
             f"CREATE VIEW transactions_long AS "
-            f"SELECT * FROM read_parquet('{long_path}/**/*.parquet', hive_partitioning=true)"
+            f"SELECT * FROM read_parquet('{long_path.as_posix()}/**/*.parquet', hive_partitioning=true)"
         )
         state.db.execute(
             f"CREATE VIEW transactions_basket AS "
-            f"SELECT * FROM read_parquet('{basket_path}/**/*.parquet', hive_partitioning=true)"
+            f"SELECT * FROM read_parquet('{basket_path.as_posix()}/**/*.parquet', hive_partitioning=true)"
         )
         state.transactions_loaded = True
         count = state.db.execute("SELECT COUNT(*) FROM transactions_long").fetchone()[0]
@@ -72,7 +53,7 @@ async def lifespan(app: FastAPI):
     if catalog_path.exists():
         state.db.execute(
             f"CREATE VIEW catalog AS "
-            f"SELECT * FROM read_parquet('{catalog_path}/*.parquet')"
+            f"SELECT * FROM read_parquet('{catalog_path.as_posix()}/*.parquet')"
         )
 
     rules_path = settings.association_rules_path
@@ -122,14 +103,23 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Routers (se agregan en secciones posteriores)
+# Routers
 # ---------------------------------------------------------------------------
-# from app.api.v1 import summary, analytics, segmentation, recommendations, transactions
-# app.include_router(summary.router, prefix="/api/v1/summary", tags=["summary"])
-# app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
-# app.include_router(segmentation.router, prefix="/api/v1/segmentation", tags=["segmentation"])
-# app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["recommendations"])
-# app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["transactions"])
+from app.api.v1 import (  # noqa: E402
+    analytics,
+    ingest,
+    recommendations,
+    segmentation,
+    summary,
+    transactions,
+)
+
+app.include_router(ingest.router,          prefix="/api/v1/ingest",          tags=["ingest"])
+app.include_router(summary.router,         prefix="/api/v1/summary",         tags=["summary"])
+app.include_router(analytics.router,       prefix="/api/v1/analytics",       tags=["analytics"])
+app.include_router(segmentation.router,    prefix="/api/v1/segmentation",    tags=["segmentation"])
+app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["recommendations"])
+app.include_router(transactions.router,    prefix="/api/v1/transactions",    tags=["transactions"])
 
 
 # ---------------------------------------------------------------------------

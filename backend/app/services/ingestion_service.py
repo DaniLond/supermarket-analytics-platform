@@ -1,4 +1,4 @@
-"""Servicio de ingesta de transacciones nuevas vía API. Implementado en Sección 9."""
+"""Servicio de ingesta de transacciones nuevas vía API."""
 
 import hashlib
 import logging
@@ -25,7 +25,6 @@ class IngestionService:
     def ingest(self, transactions: list[dict]) -> int:
         """
         Persiste nuevas transacciones en Parquet particionado.
-        Idempotente: deduplicación por transaction_id (hash de date+store+customer).
         """
         rows_long = []
         rows_basket = []
