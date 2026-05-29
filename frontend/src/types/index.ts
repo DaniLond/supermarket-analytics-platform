@@ -87,6 +87,28 @@ export interface ScatterPoint {
   cluster: number
 }
 
+// ── Respuestas de analytics ───────────────────────────────────────────────────
+export interface TimeSeriesResponse {
+  granularity: string
+  points: TimeSeriesPoint[]
+}
+
+export interface BoxplotResponse {
+  dimension: string
+  stats: BoxplotStats[]
+}
+
+export interface CorrelationCell {
+  feature_x: string
+  feature_y: string
+  correlation: number
+}
+
+export interface CorrelationHeatmapResponse {
+  features: string[]
+  cells: CorrelationCell[]
+}
+
 // ── Reglas de asociación ──────────────────────────────────────────────────────
 export interface AssociationRule {
   antecedent: number[]

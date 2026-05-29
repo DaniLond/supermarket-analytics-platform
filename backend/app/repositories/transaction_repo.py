@@ -159,10 +159,10 @@ class TransactionRepository:
         store_id: int | None = None,
     ) -> pd.DataFrame:
         granularity_expr = {
-            "day": "date",
-            "week": "DATE_TRUNC('week', date)",
-            "month": "DATE_TRUNC('month', date)",
-        }.get(granularity, "date")
+            "day": "date::DATE",
+            "week": "DATE_TRUNC('week', date::DATE)",
+            "month": "DATE_TRUNC('month', date::DATE)",
+        }.get(granularity, "date::DATE")
         where, params = self._date_filter(start_date, end_date, store_id)
         return self._db.execute(
             f"""
@@ -174,6 +174,83 @@ class TransactionRepository:
             ORDER BY period
             """,
             params,
+        ).df()
+
+    def boxplot(
+        self,
+        dimension: str = "category",
+        limit: int = 15,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        store_id: int | None = None,
+    ) -> pd.DataFrame:
+        where, params = self._date_filter(start_date, end_date, store_id)
+        if dimension == "category":
+            label_col = "category_name"
+            top_order = "COUNT(*)"
+        else:
+            label_col = "CAST(customer_id AS VARCHAR)"
+            top_order = "COUNT(DISTINCT transaction_id)"
+        return self._db.execute(
+            f"""
+            WITH all_data AS (
+                SELECT transaction_id, {label_col} AS label, category_id
+                FROM transactions_long {where}
+            ),
+            basket_sizes AS (
+                SELECT transaction_id, COUNT(DISTINCT category_id) AS basket_size
+                FROM all_data
+                GROUP BY transaction_id
+            ),
+            top_labels AS (
+                SELECT label AS lbl
+                FROM all_data
+                GROUP BY label
+                ORDER BY {top_order} DESC
+                LIMIT 50
+            ),
+            labeled AS (
+                SELECT DISTINCT transaction_id, label
+                FROM all_data
+                WHERE label IN (SELECT lbl FROM top_labels)
+            ),
+            raw AS (
+                SELECT l.label, bs.basket_size
+                FROM labeled l
+                JOIN basket_sizes bs ON l.transaction_id = bs.transaction_id
+            )
+            SELECT
+                label,
+                MIN(basket_size)                                                     AS min_val,
+                PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY basket_size)            AS q1,
+                PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY basket_size)            AS median,
+                PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY basket_size)            AS q3,
+                MAX(basket_size)                                                     AS max_val
+            FROM raw
+            GROUP BY label
+            ORDER BY median DESC
+            LIMIT {limit}
+            """,
+            params,
+        ).df()
+
+    def correlation_heatmap(self) -> pd.DataFrame:
+        return self._db.execute(
+            """
+            WITH basket_sizes AS (
+                SELECT transaction_id, COUNT(DISTINCT category_id) AS basket_size
+                FROM transactions_long
+                GROUP BY transaction_id
+            )
+            SELECT
+                t.customer_id,
+                COUNT(DISTINCT t.transaction_id)  AS frequency,
+                COUNT(DISTINCT t.category_id)     AS unique_categories,
+                AVG(b.basket_size)                AS avg_basket_size
+            FROM transactions_long t
+            JOIN basket_sizes b ON t.transaction_id = b.transaction_id
+            GROUP BY t.customer_id
+            """
         ).df()
 
     def insert_transactions(self, rows: list[dict]) -> int:
