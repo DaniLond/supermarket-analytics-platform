@@ -7,6 +7,7 @@ from pathlib import Path
 from pyspark.ml.fpm import FPGrowth
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+from pyspark.sql.types import ArrayType, LongType, StringType, StructField, StructType
 
 BASE = Path(__file__).resolve().parent.parent
 BASKET_PATH = BASE / "data" / "processed" / "transactions_basket"
@@ -35,7 +36,16 @@ def main():
     spark.sparkContext.setLogLevel("WARN")
 
     print("Cargando canastas de transacciones...", flush=True)
-    basket = spark.read.option("mergeSchema", "true").parquet(str(BASKET_PATH))
+    # Schema explícito: LongType acepta tanto int32 (upcast) como int64 (match directo).
+    # Evita CANNOT_MERGE_INCOMPATIBLE_DATA_TYPE cuando coexisten archivos INT32 e INT64 en disco.
+    basket_schema = StructType([
+        StructField("transaction_id", StringType(), True),
+        StructField("date", StringType(), True),
+        StructField("customer_id", LongType(), True),
+        StructField("categories", ArrayType(LongType()), True),
+        StructField("basket_size", LongType(), True),
+    ])
+    basket = spark.read.schema(basket_schema).parquet(str(BASKET_PATH))
     basket = basket.withColumn("categories", F.col("categories").cast("array<int>"))
 
     n_baskets = basket.count()

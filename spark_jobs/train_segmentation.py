@@ -9,6 +9,7 @@ from pyspark.ml.evaluation import ClusteringEvaluator
 from pyspark.ml.feature import StandardScaler, VectorAssembler
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+from pyspark.sql.types import LongType, StringType, StructField, StructType
 
 BASE = Path(__file__).resolve().parent.parent
 LONG_PATH = BASE / "data" / "processed" / "transactions_long"
@@ -31,7 +32,16 @@ def build_spark() -> SparkSession:
 
 
 def build_features(spark: SparkSession):
-    long = spark.read.option("mergeSchema", "true").parquet(str(LONG_PATH))
+    # Schema explícito para tolerar mezcla de INT32 (dataset original) e INT64 (ingestas API antiguas).
+    # LongType acepta tanto int32 (upcast) como int64 (match directo) sin necesidad de mergeSchema.
+    long_schema = StructType([
+        StructField("transaction_id", StringType(), True),
+        StructField("date", StringType(), True),
+        StructField("customer_id", LongType(), True),
+        StructField("category_id", LongType(), True),
+        StructField("category_name", StringType(), True),
+    ])
+    long = spark.read.schema(long_schema).parquet(str(LONG_PATH))
     reference_date = long.agg(F.max("date")).collect()[0][0]
 
     features = (
