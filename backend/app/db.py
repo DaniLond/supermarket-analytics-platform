@@ -13,6 +13,8 @@ class AppState:
     models_loaded: bool = False
     segmentation_training: bool = False
     segmentation_error: str | None = None
+    recommendations_training: bool = False
+    recommendations_error: str | None = None
 
 
 state = AppState()

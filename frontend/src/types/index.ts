@@ -126,3 +126,15 @@ export interface AssociationRule {
   confidence: number
   lift: number
 }
+
+export interface CategoryRecommendationsResponse {
+  category_id: number
+  rules: AssociationRule[]
+}
+
+export interface CustomerRecommendationsResponse {
+  customer_id: number
+  cluster: number | null
+  recommended_categories: number[]
+  rules_used: AssociationRule[]
+}

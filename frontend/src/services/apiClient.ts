@@ -61,6 +61,8 @@ export const segmentationApi = {
 
 // ── Recommendations ───────────────────────────────────────────────────────────
 export const recommendationsApi = {
+  status: () => api.get('/recommendations/status').then((r) => r.data),
+  categories: () => api.get('/recommendations/categories').then((r) => r.data as Record<number, string>),
   byCategory: (id: number) =>
     api.get(`/recommendations/category/${id}`).then((r) => r.data),
   byCustomer: (id: number) =>

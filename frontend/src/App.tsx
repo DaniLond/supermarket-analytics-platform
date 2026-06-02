@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import ExecutiveSummary from './pages/ExecutiveSummary'
 import AnalyticsExploration from './pages/AnalyticsExploration'
 import AdvancedAnalysis from './pages/AdvancedAnalysis'
+import Recommendations from './pages/Recommendations'
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
           <Route path="/" element={<ExecutiveSummary />} />
           <Route path="/analytics" element={<AnalyticsExploration />} />
           <Route path="/advanced" element={<AdvancedAnalysis />} />
+          <Route path="/recommendations" element={<Recommendations />} />
         </Routes>
       </main>
     </div>

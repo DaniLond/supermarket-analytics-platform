@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException
 from app.core.config import settings
 from app.db import state
 from app.repositories.catalog_repo import CatalogRepository
+from app.repositories.recommendations_repo import RecommendationsRepository
 from app.repositories.segmentation_repo import SegmentationRepository
 from app.repositories.transaction_repo import TransactionRepository
 
@@ -61,3 +62,12 @@ def get_segmentation_repo() -> SegmentationRepository:
             detail="Modelos no entrenados. Ejecuta POST /api/v1/segmentation/retrain primero.",
         )
     return SegmentationRepository(settings.customer_clusters_path)
+
+
+def get_recommendations_repo() -> RecommendationsRepository:
+    if not settings.association_rules_path.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="Reglas de asociación no disponibles. El modelo FP-Growth aún no está listo.",
+        )
+    return RecommendationsRepository(settings.association_rules_path)

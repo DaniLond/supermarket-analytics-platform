@@ -4,6 +4,7 @@ const links = [
   { to: '/', label: 'Resumen Ejecutivo' },
   { to: '/analytics', label: 'Visualizaciones' },
   { to: '/advanced', label: 'Análisis Avanzado' },
+  { to: '/recommendations', label: 'Recomendaciones' },
 ]
 
 export default function Sidebar() {

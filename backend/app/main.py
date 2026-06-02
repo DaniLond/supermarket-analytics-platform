@@ -20,7 +20,8 @@ logger = logging.getLogger("supermercado.api")
 
 
 # ---------------------------------------------------------------------------
-# Background: auto-entrenamiento de segmentación si los clusters no existen
+# Background: auto-entrenamiento secuencial (K-Means → FP-Growth)
+# Los dos jobs usan Spark; no pueden correr en paralelo.
 # ---------------------------------------------------------------------------
 
 def _auto_train_segmentation() -> None:
@@ -28,13 +29,35 @@ def _auto_train_segmentation() -> None:
     svc = SegmentationService()
     try:
         result = svc.retrain()
-        logger.info("Auto-entrenamiento completado: clusters_ready=%s", result.get("clusters_ready"))
+        logger.info("Auto-entrenamiento K-Means completado: clusters_ready=%s", result.get("clusters_ready"))
         state.segmentation_error = None
     except Exception as exc:
         logger.error("Auto-entrenamiento K-Means falló: %s", exc)
         state.segmentation_error = str(exc)[-2000:]
     finally:
         state.segmentation_training = False
+
+
+def _auto_train_recommendations() -> None:
+    from app.services.recommender_service import RecommenderService
+    svc = RecommenderService()
+    try:
+        result = svc.retrain()
+        logger.info("Auto-entrenamiento FP-Growth completado: rules_ready=%s", result.get("rules_ready"))
+        state.recommendations_error = None
+    except Exception as exc:
+        logger.error("Auto-entrenamiento FP-Growth falló: %s", exc)
+        state.recommendations_error = str(exc)[-2000:]
+    finally:
+        state.recommendations_training = False
+
+
+def _auto_train_all_models() -> None:
+    """Entrena los modelos que falten, en orden: K-Means primero, luego FP-Growth."""
+    if not settings.customer_clusters_path.exists():
+        _auto_train_segmentation()
+    if not settings.association_rules_path.exists():
+        _auto_train_recommendations()
 
 
 # ---------------------------------------------------------------------------
@@ -80,10 +103,13 @@ async def lifespan(app: FastAPI):
     state.models_loaded = rules_path.exists() and clusters_path.exists()
     logger.info("Modelos cargados: %s", state.models_loaded)
 
-    # Auto-entrenamiento: si los datos están cargados pero los clusters no existen, entrenar
-    if state.transactions_loaded and not clusters_path.exists():
-        threading.Thread(target=_auto_train_segmentation, daemon=True).start()
-        logger.info("Auto-entrenamiento K-Means iniciado en background (puede tardar varios minutos)")
+    # Auto-entrenamiento: si faltan modelos, entrenarlos secuencialmente en background
+    needs_training = state.transactions_loaded and (
+        not clusters_path.exists() or not rules_path.exists()
+    )
+    if needs_training:
+        threading.Thread(target=_auto_train_all_models, daemon=True).start()
+        logger.info("Auto-entrenamiento de modelos iniciado en background (K-Means → FP-Growth)")
 
     yield
 
