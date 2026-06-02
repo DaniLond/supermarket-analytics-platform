@@ -119,61 +119,48 @@ class RecommenderService:
         from app.core.config import settings
         from app.db import state
 
-        if state.recommendations_training:
-            raise RuntimeError("Ya hay un entrenamiento FP-Growth en progreso.")
-
         logger.info("Disparando reentrenamiento FP-Growth")
-        state.recommendations_training = True
-        state.recommendations_error = None
 
-        try:
-            settings.models_root.mkdir(parents=True, exist_ok=True)
+        settings.models_root.mkdir(parents=True, exist_ok=True)
 
-            script = str(settings.project_root / "spark_jobs" / "train_recommender.py")
-            logger.info("Script: %s | cwd: %s", script, settings.project_root)
+        script = str(settings.project_root / "spark_jobs" / "train_recommender.py")
+        logger.info("Script: %s | cwd: %s", script, settings.project_root)
 
-            env = os.environ.copy()
-            if platform.system() == "Windows":
-                import ctypes
+        env = os.environ.copy()
+        if platform.system() == "Windows":
+            import ctypes
 
-                env.setdefault("HADOOP_HOME", str(settings.hadoop_home))
+            env.setdefault("HADOOP_HOME", str(settings.hadoop_home))
 
-                def _short(path: str) -> str:
-                    buf = ctypes.create_unicode_buffer(32768)
-                    ret = ctypes.windll.kernel32.GetShortPathNameW(path, buf, len(buf))
-                    return buf.value if ret else path
+            def _short(path: str) -> str:
+                buf = ctypes.create_unicode_buffer(32768)
+                ret = ctypes.windll.kernel32.GetShortPathNameW(path, buf, len(buf))
+                return buf.value if ret else path
 
-                env["PYSPARK_PYTHON"] = _short(sys.executable)
-                env["PYSPARK_DRIVER_PYTHON"] = env["PYSPARK_PYTHON"]
-                pyspark_dir = str(
-                    Path(sys.executable).parent / "Lib" / "site-packages" / "pyspark"
-                )
-                env["SPARK_HOME"] = _short(pyspark_dir)
-
-            result = subprocess.run(
-                [sys.executable, script],
-                cwd=str(settings.project_root),
-                env=env,
-                capture_output=True,
-                text=True,
-                timeout=600,
+            env["PYSPARK_PYTHON"] = _short(sys.executable)
+            env["PYSPARK_DRIVER_PYTHON"] = env["PYSPARK_PYTHON"]
+            pyspark_dir = str(
+                Path(sys.executable).parent / "Lib" / "site-packages" / "pyspark"
             )
+            env["SPARK_HOME"] = _short(pyspark_dir)
 
-            if result.stdout:
-                logger.info("FP-Growth stdout:\n%s", result.stdout[-3000:])
-            if result.stderr:
-                logger.warning("FP-Growth stderr:\n%s", result.stderr[-3000:])
+        result = subprocess.run(
+            [sys.executable, script],
+            cwd=str(settings.project_root),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=600,
+        )
 
-            if result.returncode != 0:
-                raise RuntimeError(_extract_error(result.stderr, result.stdout))
+        if result.stdout:
+            logger.info("FP-Growth stdout:\n%s", result.stdout[-3000:])
+        if result.stderr:
+            logger.warning("FP-Growth stderr:\n%s", result.stderr[-3000:])
 
-            rules_ok = settings.association_rules_path.exists()
-            state.models_loaded = rules_ok and settings.customer_clusters_path.exists()
-            return {"status": "ok", "rules_ready": rules_ok, "stdout": result.stdout[-2000:]}
+        if result.returncode != 0:
+            raise RuntimeError(_extract_error(result.stderr, result.stdout))
 
-        except Exception:
-            state.recommendations_training = False
-            raise
-
-        finally:
-            state.recommendations_training = False
+        rules_ok = settings.association_rules_path.exists()
+        state.models_loaded = rules_ok and settings.customer_clusters_path.exists()
+        return {"status": "ok", "rules_ready": rules_ok, "stdout": result.stdout[-2000:]}

@@ -15,6 +15,8 @@ class AppState:
     segmentation_error: str | None = None
     recommendations_training: bool = False
     recommendations_error: str | None = None
+    last_ingest_count: int = 0
+    last_ingest_error: str | None = None
 
 
 state = AppState()

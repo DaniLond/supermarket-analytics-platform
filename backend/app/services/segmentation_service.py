@@ -141,61 +141,47 @@ class SegmentationService:
         from app.core.config import settings
         from app.db import state
 
-        if state.segmentation_training:
-            raise RuntimeError("Ya hay un entrenamiento en progreso.")
-
         logger.info("Disparando reentrenamiento de segmentación K-Means")
-        state.segmentation_training = True
-        state.segmentation_error = None
 
-        try:
-            settings.models_root.mkdir(parents=True, exist_ok=True)
-            settings.processed_root.mkdir(parents=True, exist_ok=True)
+        settings.models_root.mkdir(parents=True, exist_ok=True)
+        settings.processed_root.mkdir(parents=True, exist_ok=True)
 
-            script = str(settings.project_root / "spark_jobs" / "train_segmentation.py")
-            logger.info("Script: %s | cwd: %s", script, settings.project_root)
+        script = str(settings.project_root / "spark_jobs" / "train_segmentation.py")
+        logger.info("Script: %s | cwd: %s", script, settings.project_root)
 
-            env = os.environ.copy()
-            if platform.system() == "Windows":
-                import ctypes
-                env.setdefault("HADOOP_HOME", str(settings.hadoop_home))
+        env = os.environ.copy()
+        if platform.system() == "Windows":
+            import ctypes
+            env.setdefault("HADOOP_HOME", str(settings.hadoop_home))
 
-                def _short(path: str) -> str:
-                    buf = ctypes.create_unicode_buffer(32768)
-                    ret = ctypes.windll.kernel32.GetShortPathNameW(path, buf, len(buf))  # type: ignore[attr-defined]
-                    return buf.value if ret else path
+            def _short(path: str) -> str:
+                buf = ctypes.create_unicode_buffer(32768)
+                ret = ctypes.windll.kernel32.GetShortPathNameW(path, buf, len(buf))  # type: ignore[attr-defined]
+                return buf.value if ret else path
 
-                env["PYSPARK_PYTHON"] = _short(sys.executable)
-                env["PYSPARK_DRIVER_PYTHON"] = env["PYSPARK_PYTHON"]
-                pyspark_dir = str(Path(sys.executable).parent / "Lib" / "site-packages" / "pyspark")
-                env["SPARK_HOME"] = _short(pyspark_dir)
+            env["PYSPARK_PYTHON"] = _short(sys.executable)
+            env["PYSPARK_DRIVER_PYTHON"] = env["PYSPARK_PYTHON"]
+            pyspark_dir = str(Path(sys.executable).parent / "Lib" / "site-packages" / "pyspark")
+            env["SPARK_HOME"] = _short(pyspark_dir)
 
-            result = subprocess.run(
-                [sys.executable, script],
-                cwd=str(settings.project_root),
-                env=env,
-                capture_output=True,
-                text=True,
-                timeout=600,
-            )
+        result = subprocess.run(
+            [sys.executable, script],
+            cwd=str(settings.project_root),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=600,
+        )
 
-            # Siempre loguea la salida completa para facilitar diagnóstico
-            if result.stdout:
-                logger.info("Spark stdout:\n%s", result.stdout[-3000:])
-            if result.stderr:
-                logger.warning("Spark stderr:\n%s", result.stderr[-3000:])
+        if result.stdout:
+            logger.info("Spark stdout:\n%s", result.stdout[-3000:])
+        if result.stderr:
+            logger.warning("Spark stderr:\n%s", result.stderr[-3000:])
 
-            if result.returncode != 0:
-                raise RuntimeError(_extract_error(result.stderr, result.stdout))
+        if result.returncode != 0:
+            raise RuntimeError(_extract_error(result.stderr, result.stdout))
 
-            clusters_ok = settings.customer_clusters_path.exists()
-            rules_ok = settings.association_rules_path.exists()
-            state.models_loaded = clusters_ok and rules_ok
-            return {"status": "ok", "clusters_ready": clusters_ok, "stdout": result.stdout[-2000:]}
-
-        except Exception:
-            state.segmentation_training = False
-            raise
-
-        finally:
-            state.segmentation_training = False
+        clusters_ok = settings.customer_clusters_path.exists()
+        rules_ok = settings.association_rules_path.exists()
+        state.models_loaded = clusters_ok and rules_ok
+        return {"status": "ok", "clusters_ready": clusters_ok, "stdout": result.stdout[-2000:]}

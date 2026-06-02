@@ -1,0 +1,12 @@
+[
+  {"date": "2013-07-08", "store_id": 110, "customer_id": 9011, "categories": [2, 5, 14, 22, 33]},
+  {"date": "2013-07-08", "store_id": 107, "customer_id": 9012, "categories": [8, 12, 16, 30, 44]},
+  {"date": "2013-07-09", "store_id": 102, "customer_id": 9013, "categories": [3, 6, 19, 24, 29, 38]},
+  {"date": "2013-07-09", "store_id": 103, "customer_id": 9014, "categories": [10, 15, 35, 42, 48]},
+  {"date": "2013-07-10", "store_id": 110, "customer_id": 9015, "categories": [1, 7, 17, 23, 27]},
+  {"date": "2013-07-10", "store_id": 107, "customer_id": 9016, "categories": [4, 11, 20, 36, 46]},
+  {"date": "2013-07-11", "store_id": 102, "customer_id": 9017, "categories": [6, 13, 25, 31, 40, 50]},
+  {"date": "2013-07-11", "store_id": 103, "customer_id": 9018, "categories": [2, 9, 18, 34, 43]},
+  {"date": "2013-07-12", "store_id": 110, "customer_id": 9019, "categories": [5, 16, 21, 28, 37, 49]},
+  {"date": "2013-07-12", "store_id": 107, "customer_id": 9020, "categories": [3, 8, 26, 32, 41, 45]}
+]

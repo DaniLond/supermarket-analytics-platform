@@ -1,12 +1,12 @@
 """Schemas Pydantic para entrada/salida de la API v1."""
 
-from datetime import date
+from datetime import date as _Date
 
 from pydantic import BaseModel, Field
 
 
 class NewTransaction(BaseModel):
-    date: date = Field(..., examples=["2013-07-01"])
+    date: _Date = Field(..., examples=["2013-07-01"])
     store_id: int = Field(..., examples=[102])
     customer_id: int = Field(..., examples=[999])
     categories: list[int] = Field(..., examples=[[1, 5, 10]])

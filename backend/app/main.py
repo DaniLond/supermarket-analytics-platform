@@ -26,6 +26,8 @@ logger = logging.getLogger("supermercado.api")
 
 def _auto_train_segmentation() -> None:
     from app.services.segmentation_service import SegmentationService
+    state.segmentation_training = True
+    state.segmentation_error = None
     svc = SegmentationService()
     try:
         result = svc.retrain()
@@ -40,6 +42,8 @@ def _auto_train_segmentation() -> None:
 
 def _auto_train_recommendations() -> None:
     from app.services.recommender_service import RecommenderService
+    state.recommendations_training = True
+    state.recommendations_error = None
     svc = RecommenderService()
     try:
         result = svc.retrain()
@@ -52,11 +56,11 @@ def _auto_train_recommendations() -> None:
         state.recommendations_training = False
 
 
-def _auto_train_all_models() -> None:
-    """Entrena los modelos que falten, en orden: K-Means primero, luego FP-Growth."""
-    if not settings.customer_clusters_path.exists():
+def _auto_train_all_models(force: bool = False) -> None:
+    """Entrena K-Means → FP-Growth. Con force=True re-entrena aunque ya existan."""
+    if force or not settings.customer_clusters_path.exists():
         _auto_train_segmentation()
-    if not settings.association_rules_path.exists():
+    if force or not settings.association_rules_path.exists():
         _auto_train_recommendations()
 
 
@@ -108,6 +112,8 @@ async def lifespan(app: FastAPI):
         not clusters_path.exists() or not rules_path.exists()
     )
     if needs_training:
+        state.segmentation_training = not clusters_path.exists()
+        state.recommendations_training = not rules_path.exists()
         threading.Thread(target=_auto_train_all_models, daemon=True).start()
         logger.info("Auto-entrenamiento de modelos iniciado en background (K-Means → FP-Growth)")
 

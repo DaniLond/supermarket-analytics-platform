@@ -24,6 +24,8 @@ def build_spark() -> SparkSession:
         .config("spark.driver.memory", "2g")
         .config("spark.executor.memory", "2g")
         .config("spark.sql.adaptive.enabled", "false")
+        .config("spark.sql.parquet.enableVectorizedReader", "false")
+        .config("spark.sql.codegen.wholeStage", "false")
         .getOrCreate()
     )
 
@@ -33,7 +35,7 @@ def main():
     spark.sparkContext.setLogLevel("WARN")
 
     print("Cargando canastas de transacciones...", flush=True)
-    basket = spark.read.parquet(str(BASKET_PATH))
+    basket = spark.read.option("mergeSchema", "true").parquet(str(BASKET_PATH))
     basket = basket.withColumn("categories", F.col("categories").cast("array<int>"))
 
     n_baskets = basket.count()

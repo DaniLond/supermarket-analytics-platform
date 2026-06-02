@@ -24,12 +24,14 @@ def build_spark() -> SparkSession:
         .config("spark.driver.memory", "2g")
         .config("spark.executor.memory", "2g")
         .config("spark.sql.adaptive.enabled", "false")
+        .config("spark.sql.parquet.enableVectorizedReader", "false")
+        .config("spark.sql.codegen.wholeStage", "false")
         .getOrCreate()
     )
 
 
 def build_features(spark: SparkSession):
-    long = spark.read.parquet(str(LONG_PATH))
+    long = spark.read.option("mergeSchema", "true").parquet(str(LONG_PATH))
     reference_date = long.agg(F.max("date")).collect()[0][0]
 
     features = (

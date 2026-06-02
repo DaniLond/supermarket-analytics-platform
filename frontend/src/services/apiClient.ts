@@ -71,12 +71,12 @@ export const recommendationsApi = {
     api.get(`/recommendations/products-by-category/${id}`).then((r) => r.data),
 }
 
-// ── Transactions ──────────────────────────────────────────────────────────────
+// ── Transactions / Pipeline ───────────────────────────────────────────────────
 export const transactionsApi = {
   ingest: (transactions: object[]) =>
     api.post('/transactions', { transactions }).then((r) => r.data),
-  retrain: () => api.post('/models/retrain').then((r) => r.data),
-  modelStatus: () => api.get('/models/status').then((r) => r.data),
+  retrain: () => api.post('/transactions/retrain').then((r) => r.data),
+  pipelineStatus: () => api.get('/transactions/status').then((r) => r.data),
 }
 
 export default api

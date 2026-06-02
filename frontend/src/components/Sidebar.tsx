@@ -5,6 +5,7 @@ const links = [
   { to: '/analytics', label: 'Visualizaciones' },
   { to: '/advanced', label: 'Análisis Avanzado' },
   { to: '/recommendations', label: 'Recomendaciones' },
+  { to: '/data', label: 'Gestión de Datos' },
 ]
 
 export default function Sidebar() {

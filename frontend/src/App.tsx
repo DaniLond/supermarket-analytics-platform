@@ -4,6 +4,7 @@ import ExecutiveSummary from './pages/ExecutiveSummary'
 import AnalyticsExploration from './pages/AnalyticsExploration'
 import AdvancedAnalysis from './pages/AdvancedAnalysis'
 import Recommendations from './pages/Recommendations'
+import DataManagement from './pages/DataManagement'
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
           <Route path="/analytics" element={<AnalyticsExploration />} />
           <Route path="/advanced" element={<AdvancedAnalysis />} />
           <Route path="/recommendations" element={<Recommendations />} />
+          <Route path="/data" element={<DataManagement />} />
         </Routes>
       </main>
     </div>
