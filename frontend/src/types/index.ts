@@ -87,6 +87,15 @@ export interface ScatterPoint {
   cluster: number
 }
 
+// ── Respuestas de segmentación ────────────────────────────────────────────────
+export interface ClusterProfilesResponse {
+  clusters: ClusterProfile[]
+}
+
+export interface ScatterResponse {
+  points: ScatterPoint[]
+}
+
 // ── Respuestas de analytics ───────────────────────────────────────────────────
 export interface TimeSeriesResponse {
   granularity: string

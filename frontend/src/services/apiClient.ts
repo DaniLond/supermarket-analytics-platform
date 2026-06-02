@@ -51,6 +51,7 @@ export const analyticsApi = {
 
 // ── Segmentation ──────────────────────────────────────────────────────────────
 export const segmentationApi = {
+  status: () => api.get('/segmentation/status').then((r) => r.data),
   clusters: () => api.get('/segmentation/clusters').then((r) => r.data),
   customerCluster: (id: number) =>
     api.get(`/segmentation/customers/${id}/cluster`).then((r) => r.data),

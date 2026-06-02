@@ -3,6 +3,7 @@ Supermercado Analytics API
 """
 
 import logging
+import threading
 from contextlib import asynccontextmanager
 
 import duckdb
@@ -16,6 +17,24 @@ from app.db import state
 
 setup_logging()
 logger = logging.getLogger("supermercado.api")
+
+
+# ---------------------------------------------------------------------------
+# Background: auto-entrenamiento de segmentación si los clusters no existen
+# ---------------------------------------------------------------------------
+
+def _auto_train_segmentation() -> None:
+    from app.services.segmentation_service import SegmentationService
+    svc = SegmentationService()
+    try:
+        result = svc.retrain()
+        logger.info("Auto-entrenamiento completado: clusters_ready=%s", result.get("clusters_ready"))
+        state.segmentation_error = None
+    except Exception as exc:
+        logger.error("Auto-entrenamiento K-Means falló: %s", exc)
+        state.segmentation_error = str(exc)[-2000:]
+    finally:
+        state.segmentation_training = False
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +79,11 @@ async def lifespan(app: FastAPI):
     clusters_path = settings.customer_clusters_path
     state.models_loaded = rules_path.exists() and clusters_path.exists()
     logger.info("Modelos cargados: %s", state.models_loaded)
+
+    # Auto-entrenamiento: si los datos están cargados pero los clusters no existen, entrenar
+    if state.transactions_loaded and not clusters_path.exists():
+        threading.Thread(target=_auto_train_segmentation, daemon=True).start()
+        logger.info("Auto-entrenamiento K-Means iniciado en background (puede tardar varios minutos)")
 
     yield
 

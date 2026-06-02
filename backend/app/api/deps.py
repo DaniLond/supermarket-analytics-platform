@@ -1,5 +1,5 @@
 """
-Dependencias de inyección — proveedores de conexión DuckDB y repositorios.
+Dependencias de inyección
 """
 
 import duckdb
@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException
 from app.core.config import settings
 from app.db import state
 from app.repositories.catalog_repo import CatalogRepository
+from app.repositories.segmentation_repo import SegmentationRepository
 from app.repositories.transaction_repo import TransactionRepository
 
 
@@ -51,3 +52,12 @@ def get_catalog_repo(
     db: duckdb.DuckDBPyConnection = Depends(get_db),
 ) -> CatalogRepository:
     return CatalogRepository(db)
+
+
+def get_segmentation_repo() -> SegmentationRepository:
+    if not settings.customer_clusters_path.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="Modelos no entrenados. Ejecuta POST /api/v1/segmentation/retrain primero.",
+        )
+    return SegmentationRepository(settings.customer_clusters_path)
